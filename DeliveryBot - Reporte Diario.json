@@ -1,0 +1,197 @@
+{
+  "name": "DeliveryBot - Reporte Diario",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 18
+            }
+          ]
+        }
+      },
+      "id": "cc221aba-4284-4633-ba17-ace137e15d50",
+      "name": "Cada día 18:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -96,
+        -16
+      ],
+      "notes": "Se ejecuta todos los días a las 18:00 (hora del servidor / America/Bogota) para enviar el reporte diario."
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "18NWIaWc-EiEfVqBDF6Ju0Qy_Q5LCzHaR_beGbuoYpaU",
+          "cachedResultName": "DeliveryBot_DB"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "52459790",
+          "cachedResultName": "PEDIDOS"
+        },
+        "options": {}
+      },
+      "id": "a291a2cc-fa0d-471e-b135-20ed11cd62d4",
+      "name": "Leer PEDIDOS",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        128,
+        -16
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CNCpICN5ktJGioc7",
+          "name": "DeliveryBot Google Sheets"
+        }
+      },
+      "notes": "Lee todas las filas de la hoja PEDIDOS. alwaysOutputData garantiza el envío del reporte aunque no haya pedidos."
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json).filter(r => r && Object.keys(r).length > 0 && r.id_pedido);\nconst now = $now;\nconst p2 = n => String(n).padStart(2, '0');\nconst hoy = p2(now.day) + '/' + p2(now.month) + '/' + now.year;\nconst hoyRows = rows.filter(r => String(r.fecha) === hoy);\n\nlet total = 0;\nconst prodQty = {};\nconst horaCount = {};\nfor (const r of hoyRows) {\n  total += Number(r.total_pago || 0);\n  // producto más vendido\n  let cart = [];\n  try { cart = r.detalles_pedido ? JSON.parse(r.detalles_pedido) : []; } catch (e) { cart = []; }\n  for (const it of cart) {\n    const nombre = it.nombre || it.id_producto || 'desconocido';\n    prodQty[nombre] = (prodQty[nombre] || 0) + Number(it.cantidad || 0);\n  }\n  // hora pico (por hora entera)\n  const h = String(r.hora || '').split(':')[0];\n  if (h !== '') horaCount[h] = (horaCount[h] || 0) + 1;\n}\n\nlet estrella = '—';\nlet maxQty = 0;\nfor (const k of Object.keys(prodQty)) { if (prodQty[k] > maxQty) { maxQty = prodQty[k]; estrella = k; } }\n\nlet horaPico = '—';\nlet maxH = 0;\nfor (const k of Object.keys(horaCount)) { if (horaCount[k] > maxH) { maxH = horaCount[k]; horaPico = k; } }\nif (horaPico !== '—') { horaPico = p2(horaPico) + ':00 - ' + p2((Number(horaPico) + 1) % 24) + ':00'; }\n\nconst texto = 'Reporte diario DeliveryBot\\n' +\n  'Fecha: ' + hoy + '\\n' +\n  'Total vendido: $' + total.toLocaleString('es-CO') + '\\n' +\n  'Pedidos: ' + hoyRows.length + '\\n' +\n  'Producto estrella: ' + estrella + '\\n' +\n  'Hora pico: ' + horaPico;\n\nreturn [{ json: { fecha: hoy, total_vendido: total, num_pedidos: hoyRows.length, producto_estrella: estrella, hora_pico: horaPico, texto } }];"
+      },
+      "id": "7c4a552c-5ff5-4118-9e81-fd97982df955",
+      "name": "Calcular reporte",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        352,
+        -16
+      ],
+      "notes": "Filtra los pedidos de hoy y calcula total vendido, número de pedidos, producto estrella y hora pico."
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.telegram_id }}",
+        "text": "={{ $('Calcular reporte').first().json.texto }}",
+        "additionalFields": {}
+      },
+      "id": "f0f99f51-2c6a-4f23-9cc7-e902e6b4158d",
+      "name": "Enviar reporte admin",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        576,
+        -16
+      ],
+      "webhookId": "f2dadc81-3428-41c4-8038-3571e51770aa",
+      "credentials": {
+        "telegramApi": {
+          "id": "VbBh8q0XYEMx7zBP",
+          "name": "DeliveryBot Telegram Admin"
+        }
+      },
+      "notes": "Envía el reporte diario al chat del administrador."
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "18NWIaWc-EiEfVqBDF6Ju0Qy_Q5LCzHaR_beGbuoYpaU",
+          "cachedResultName": "DeliveryBot_DB"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 795776107,
+          "mode": "list",
+          "cachedResultName": "ADMINS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18NWIaWc-EiEfVqBDF6Ju0Qy_Q5LCzHaR_beGbuoYpaU/edit#gid=795776107"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "activo",
+              "lookupValue": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6d012696-40d3-4a68-9360-4d8153a07c0a",
+      "name": "Leer ADMINS activos",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        576,
+        144
+      ],
+      "notesInFlow": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CNCpICN5ktJGioc7",
+          "name": "DeliveryBot Google Sheets"
+        }
+      },
+      "notes": "Trae a todo el personal activo en ADMINS. El nodo de Telegram siguiente envía un mensaje por cada fila (uno por empleado). Tras importar, reselecciona 'ADMINS' desde el desplegable real."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Cada día 18:00": {
+      "main": [
+        [
+          {
+            "node": "Leer PEDIDOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer PEDIDOS": {
+      "main": [
+        [
+          {
+            "node": "Calcular reporte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular reporte": {
+      "main": [
+        [
+          {
+            "node": "Leer ADMINS activos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer ADMINS activos": {
+      "main": [
+        [
+          {
+            "node": "Enviar reporte admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "fe4a6c3b-ea61-42a0-9b9f-977ba8f7a533",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "943f462e532f5c1600875f83ec8529dc2aa0a1341da90e4d37a73565b0fb430e"
+  },
+  "nodeGroups": [],
+  "id": "Wee1c5YiWoezMEFu",
+  "tags": []
+}
