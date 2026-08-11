@@ -1,0 +1,311 @@
+{
+  "name": "DeliveryBot - Estados",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "18NWIaWc-EiEfVqBDF6Ju0Qy_Q5LCzHaR_beGbuoYpaU",
+          "cachedResultName": "DeliveryBot_DB"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "52459790",
+          "cachedResultName": "PEDIDOS"
+        },
+        "event": "rowUpdate",
+        "options": {
+          "columnsToWatch": [
+            "estado"
+          ]
+        }
+      },
+      "id": "4c113ee6-2aa5-4dc8-b16d-5cb8a9ef2884",
+      "name": "PEDIDOS actualizado",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        288
+      ],
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "v14QnZpSymUvW3Ik",
+          "name": "Google Sheets Trigger account"
+        }
+      },
+      "notes": "Se dispara cuando cambia una fila en la hoja PEDIDOS (sondeo cada minuto). Vigila la columna estado."
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.estado }}",
+                    "rightValue": "Recibido",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "recibido"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.estado }}",
+                    "rightValue": "Preparación",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "preparacion"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.estado }}",
+                    "rightValue": "En camino",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "encamino"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.estado }}",
+                    "rightValue": "Entregado",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "entregado"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "33f76fac-4e57-4d78-a52a-e6bf1a018d43",
+      "name": "Ruteador estado",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        224,
+        256
+      ],
+      "notes": "Enruta según el valor de la columna estado. Estados desconocidos/vacíos caen en el fallback y no envían nada."
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.id_usuario }}",
+        "text": "=✅ Pedido {{ $json.id_pedido }}\nTu pedido ha sido recibido por la cafetería.",
+        "additionalFields": {}
+      },
+      "id": "d2ebf8de-7e53-4601-a5d5-c9ee0bafbf7b",
+      "name": "Notificar Recibido",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        448,
+        0
+      ],
+      "webhookId": "e3954c06-b3ba-4eb4-be46-9b281618e836",
+      "credentials": {
+        "telegramApi": {
+          "id": "Ls74wDt9mD7q3lih",
+          "name": "Telegram account"
+        }
+      },
+      "notes": "Envía la notificación de estado Recibido al cliente."
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.id_usuario }}",
+        "text": "=👨‍🍳 Pedido {{ $json.id_pedido }}\nTu pedido está siendo preparado.",
+        "additionalFields": {}
+      },
+      "id": "985b2644-f2be-41c1-90d9-34a8d9b1f18a",
+      "name": "Notificar Preparación",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        448,
+        192
+      ],
+      "webhookId": "3f3273fd-7c60-46fb-98a7-e608f0cd808a",
+      "credentials": {
+        "telegramApi": {
+          "id": "Ls74wDt9mD7q3lih",
+          "name": "Telegram account"
+        }
+      },
+      "notes": "Envía la notificación de estado Preparación al cliente."
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.id_usuario }}",
+        "text": "=🛵 Pedido {{ $json.id_pedido }}\nTu pedido está en camino.",
+        "additionalFields": {}
+      },
+      "id": "48273390-b5d4-4328-88de-64c8fbc39223",
+      "name": "Notificar En camino",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        448,
+        384
+      ],
+      "webhookId": "f9bb8ba2-0303-43ec-88f3-051ca63d1bfe",
+      "credentials": {
+        "telegramApi": {
+          "id": "Ls74wDt9mD7q3lih",
+          "name": "Telegram account"
+        }
+      },
+      "notes": "Envía la notificación de estado En camino al cliente."
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.id_usuario }}",
+        "text": "=📦 Pedido {{ $json.id_pedido }}\nTu pedido ha sido entregado. ¡Gracias por usar DeliveryBot!",
+        "additionalFields": {}
+      },
+      "id": "c979f239-3233-4f4a-a874-6f7340eb5ee3",
+      "name": "Notificar Entregado",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        448,
+        576
+      ],
+      "webhookId": "7e46dba1-a731-4de4-97d2-49976adc3aed",
+      "credentials": {
+        "telegramApi": {
+          "id": "Ls74wDt9mD7q3lih",
+          "name": "Telegram account"
+        }
+      },
+      "notes": "Envía la notificación de estado Entregado al cliente."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "PEDIDOS actualizado": {
+      "main": [
+        [
+          {
+            "node": "Ruteador estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ruteador estado": {
+      "main": [
+        [
+          {
+            "node": "Notificar Recibido",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notificar Preparación",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notificar En camino",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notificar Entregado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f9af9d49-238c-47ee-a1c3-d0a3b82424dd",
+  "meta": {
+    "instanceId": "943f462e532f5c1600875f83ec8529dc2aa0a1341da90e4d37a73565b0fb430e"
+  },
+  "nodeGroups": [],
+  "id": "RCDjfsx0x3SpZibA",
+  "tags": []
+}
