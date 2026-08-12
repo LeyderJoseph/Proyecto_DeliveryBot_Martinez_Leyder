@@ -72,7 +72,9 @@
       "parameters": {
         "chatId": "={{ $json.telegram_id }}",
         "text": "={{ $('Calcular reporte').first().json.texto }}",
-        "additionalFields": {}
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "id": "f0f99f51-2c6a-4f23-9cc7-e902e6b4158d",
       "name": "Enviar reporte admin",
@@ -186,7 +188,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "fe4a6c3b-ea61-42a0-9b9f-977ba8f7a533",
+  "versionId": "2d8ed87b-2714-47b1-9497-86f90fbca85e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "943f462e532f5c1600875f83ec8529dc2aa0a1341da90e4d37a73565b0fb430e"

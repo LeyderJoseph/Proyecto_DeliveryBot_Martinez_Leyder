@@ -161,7 +161,9 @@
       "parameters": {
         "chatId": "={{ $json.id_usuario }}",
         "text": "=✅ Pedido {{ $json.id_pedido }}\nTu pedido ha sido recibido por la cafetería.",
-        "additionalFields": {}
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "id": "d2ebf8de-7e53-4601-a5d5-c9ee0bafbf7b",
       "name": "Notificar Recibido",
@@ -184,7 +186,9 @@
       "parameters": {
         "chatId": "={{ $json.id_usuario }}",
         "text": "=👨‍🍳 Pedido {{ $json.id_pedido }}\nTu pedido está siendo preparado.",
-        "additionalFields": {}
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "id": "985b2644-f2be-41c1-90d9-34a8d9b1f18a",
       "name": "Notificar Preparación",
@@ -207,7 +211,9 @@
       "parameters": {
         "chatId": "={{ $json.id_usuario }}",
         "text": "=🛵 Pedido {{ $json.id_pedido }}\nTu pedido está en camino.",
-        "additionalFields": {}
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "id": "48273390-b5d4-4328-88de-64c8fbc39223",
       "name": "Notificar En camino",
@@ -230,7 +236,9 @@
       "parameters": {
         "chatId": "={{ $json.id_usuario }}",
         "text": "=📦 Pedido {{ $json.id_pedido }}\nTu pedido ha sido entregado. ¡Gracias por usar DeliveryBot!",
-        "additionalFields": {}
+        "additionalFields": {
+          "appendAttribution": false
+        }
       },
       "id": "c979f239-3233-4f4a-a874-6f7340eb5ee3",
       "name": "Notificar Entregado",
@@ -301,7 +309,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "f9af9d49-238c-47ee-a1c3-d0a3b82424dd",
+  "versionId": "ad68a1a9-da75-4abb-9558-1249b055c65a",
   "meta": {
     "instanceId": "943f462e532f5c1600875f83ec8529dc2aa0a1341da90e4d37a73565b0fb430e"
   },

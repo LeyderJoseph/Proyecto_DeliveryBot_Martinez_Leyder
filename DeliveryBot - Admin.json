@@ -1,0 +1,932 @@
+{
+  "name": "DeliveryBot - Admin",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "id": "1ed3451c-9de6-4296-974e-315cef30ac55",
+      "name": "Telegram Trigger Admin",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1712,
+        144
+      ],
+      "notesInFlow": false,
+      "webhookId": "2beded1c-3d69-4715-b250-985b48100678",
+      "credentials": {
+        "telegramApi": {
+          "id": "VbBh8q0XYEMx7zBP",
+          "name": "DeliveryBot Telegram Admin"
+        }
+      },
+      "notes": "Escucha mensajes del bot de ADMINISTRACIÓN (bot distinto al de clientes, token distinto, credencial 'DeliveryBot Telegram Admin')."
+    },
+    {
+      "parameters": {
+        "jsCode": "const upd = $json;\nconst cq = upd.callback_query;\nconst msg = cq ? cq.message : upd.message;\nconst from = cq ? cq.from : (upd.message ? upd.message.from : {});\nconst chat_id = msg && msg.chat ? msg.chat.id : (from ? from.id : null);\nconst telegram_id = String(from && from.id ? from.id : '');\nconst nombre_usuario = [from && from.first_name, from && from.last_name].filter(Boolean).join(' ');\nlet raw = cq ? String(cq.data || '') : String((upd.message && upd.message.text) || '').trim();\nlet action = 'UNKNOWN';\nlet param = '';\nif (cq) {\n  if (raw === 'START') action = 'START';\n  else if (raw === 'PENDING') action = 'PENDING';\n  else if (raw.indexOf('ORDER:') === 0) { action = 'ORDER'; param = raw.slice(6); }\n  else if (raw.indexOf('SETSTATUS:') === 0) { action = 'SETSTATUS'; param = raw.slice(10); }\n  else if (raw === 'REPORT') action = 'REPORT';\n} else {\n  const t = raw.toLowerCase();\n  if (t === '/start' || t === 'start' || t === 'hola' || t === 'inicio') action = 'START';\n  else if (t.indexOf('pendientes') !== -1 || t.indexOf('pedidos') !== -1) action = 'PENDING';\n  else if (t.indexOf('reporte') !== -1) action = 'REPORT';\n  else if (/^ord-\\d{8}-\\d{6}$/i.test(raw.trim())) { action = 'ORDER'; param = raw.trim().toUpperCase(); }\n}\nreturn [{ json: { chat_id, telegram_id, nombre_usuario, action, param, raw, now: new Date().toISOString() } }];"
+      },
+      "id": "14ffaf2f-dd61-4778-adab-5942869075ba",
+      "name": "Normalizar entrada",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -1488,
+        144
+      ],
+      "notesInFlow": false,
+      "notes": "Igual que en el bot de clientes: unifica texto y botones (callback_query) en action/param. Acciones: START, PENDING, ORDER, SETSTATUS, REPORT."
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "18NWIaWc-EiEfVqBDF6Ju0Qy_Q5LCzHaR_beGbuoYpaU",
+          "cachedResultName": "DeliveryBot_DB"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 795776107,
+          "mode": "list",
+          "cachedResultName": "ADMINS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18NWIaWc-EiEfVqBDF6Ju0Qy_Q5LCzHaR_beGbuoYpaU/edit#gid=795776107"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "telegram_id",
+              "lookupValue": "={{ $json.telegram_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "78d0f71b-07af-4347-b3ee-7b30971662eb",
+      "name": "Buscar Admin",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1280,
+        144
+      ],
+      "notesInFlow": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CNCpICN5ktJGioc7",
+          "name": "DeliveryBot Google Sheets"
+        }
+      },
+      "notes": "Busca al remitente en la hoja ADMINS. Solo el personal que TÚ agregues manualmente ahí puede usar este bot — no hay auto-registro, por seguridad."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "f977cb73-cbe0-4e73-ab3e-02c367aa37f2",
+              "leftValue": "={{ $json.telegram_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "da07cb1a-7b26-4b49-a449-a26917041819",
+      "name": "Es Admin?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1056,
+        144
+      ],
+      "notesInFlow": false,
+      "notes": "True = está en ADMINS. False = no autorizado."
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Normalizar entrada').first().json.chat_id }}",
+        "text": "No tienes acceso a este panel. Contacta al administrador del sistema para que te agregue.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "c719dfbc-8cc3-4514-bdeb-6688f78f9b26",
+      "name": "Acceso denegado",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -896,
+        544
+      ],
+      "notesInFlow": false,
+      "webhookId": "cdf55a20-9cb4-45b7-aae2-66e4dd3310a9",
+      "credentials": {
+        "telegramApi": {
+          "id": "VbBh8q0XYEMx7zBP",
+          "name": "DeliveryBot Telegram Admin"
+        }
+      },
+      "notes": "Se envía cuando el telegram_id no está en la hoja ADMINS."
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "combinator": "or",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Normalizar entrada').first().json.action }}",
+                    "rightValue": "START",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "start"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "combinator": "or",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Normalizar entrada').first().json.action }}",
+                    "rightValue": "PENDING",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "pendientes"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "combinator": "or",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Normalizar entrada').first().json.action }}",
+                    "rightValue": "ORDER",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "detalle"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "combinator": "or",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Normalizar entrada').first().json.action }}",
+                    "rightValue": "SETSTATUS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "cambiarEstado"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "combinator": "or",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Normalizar entrada').first().json.action }}",
+                    "rightValue": "REPORT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "reporte"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "2b902ec9-f695-4f39-bfee-5383b108bca9",
+      "name": "Ruteador Admin",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -864,
+        32
+      ],
+      "notesInFlow": false,
+      "notes": "Reparte según action: START | PENDING | ORDER | SETSTATUS | REPORT | (fallback) comando no reconocido."
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Normalizar entrada').first().json.chat_id }}",
+        "text": "=👋 Panel de administración DeliveryBot\n\n¿Qué deseas hacer?",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "📋 Pedidos pendientes",
+                    "additionalFields": {
+                      "callback_data": "PENDING"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "📊 Reporte de hoy",
+                    "additionalFields": {
+                      "callback_data": "REPORT"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "024f291a-bfbb-4a0e-af2a-090692adf817",
+      "name": "Mensaje bienvenida admin",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        -192
+      ],
+      "webhookId": "8eea14f9-4254-4afe-90b3-defcb055bfcf",
+      "credentials": {
+        "telegramApi": {
+          "id": "VbBh8q0XYEMx7zBP",
+          "name": "DeliveryBot Telegram Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "18NWIaWc-EiEfVqBDF6Ju0Qy_Q5LCzHaR_beGbuoYpaU",
+          "cachedResultName": "DeliveryBot_DB"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "52459790",
+          "cachedResultName": "PEDIDOS"
+        },
+        "options": {}
+      },
+      "id": "377f4fe2-d327-45e9-a6af-938b61fd48ea",
+      "name": "Leer PEDIDOS pendientes",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -592,
+        -16
+      ],
+      "notesInFlow": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CNCpICN5ktJGioc7",
+          "name": "DeliveryBot Google Sheets"
+        }
+      },
+      "notes": "Trae TODOS los pedidos; el filtro de 'pendientes' (no Entregado) se hace en el Code siguiente."
+    },
+    {
+      "parameters": {
+        "jsCode": "const pedidos = items.map(i => i.json).filter(p => p.id_pedido && p.estado !== 'Entregado');\nif (pedidos.length === 0) {\n  return [{ json: { texto: 'No hay pedidos pendientes en este momento.' } }];\n}\nlet texto = 'Pedidos pendientes:\\n\\n';\nfor (const p of pedidos) {\n  texto += `${p.id_pedido} - ${p.estado} - $${Number(p.total_pago).toLocaleString('es-CO')}\\n`;\n}\ntexto += '\\nEscribe el número de orden que quieres ver, por ejemplo: ' + pedidos[0].id_pedido;\nreturn [{ json: { texto } }];"
+      },
+      "id": "1b771750-78f3-47b2-9093-4a96e8b7b7cb",
+      "name": "Formatear pendientes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        -16
+      ],
+      "notesInFlow": false,
+      "notes": "Deja fuera los pedidos ya 'Entregado' y arma un botón 'Ver' por cada pedido pendiente."
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Normalizar entrada').first().json.chat_id }}",
+        "text": "={{ $json.texto }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "1d64ca63-fd5b-42c9-9fe3-89de961c09f5",
+      "name": "Enviar pendientes",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -144,
+        -16
+      ],
+      "webhookId": "efc69232-42bb-4595-8288-545bb7c1e049",
+      "credentials": {
+        "telegramApi": {
+          "id": "VbBh8q0XYEMx7zBP",
+          "name": "DeliveryBot Telegram Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "18NWIaWc-EiEfVqBDF6Ju0Qy_Q5LCzHaR_beGbuoYpaU",
+          "cachedResultName": "DeliveryBot_DB"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "52459790",
+          "cachedResultName": "PEDIDOS"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "id_pedido",
+              "lookupValue": "={{ $('Normalizar entrada').first().json.param }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "919cac50-52d7-4655-a2be-7ac2596d2f6e",
+      "name": "Buscar Pedido",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -592,
+        160
+      ],
+      "notesInFlow": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CNCpICN5ktJGioc7",
+          "name": "DeliveryBot Google Sheets"
+        }
+      },
+      "notes": "Trae la fila exacta del pedido que el admin pulsó en 'Ver'."
+    },
+    {
+      "parameters": {
+        "jsCode": "const p = items[0] ? items[0].json : null;\nif (!p) return [{ json: { texto: 'No encontré ese pedido.', encontrado: false } }];\n\nlet detalleTexto = p.detalles_pedido;\ntry {\n  const productos = JSON.parse(p.detalles_pedido);\n  detalleTexto = productos.map(i => '• ' + i.nombre + ' x' + i.cantidad + ' — $' + Number(i.precio * i.cantidad).toLocaleString('es-CO')).join('\\n');\n} catch (e) {}\n\nconst emojiEstado = { 'Recibido': '🆕', 'Preparación': '👨‍🍳', 'En camino': '🛵', 'Entregado': '📦' };\nconst emoji = emojiEstado[p.estado] || '📋';\n\nconst texto = `${emoji} *Pedido ${p.id_pedido}*\\n👤 ${p.nombre_usuario}\\n\\n🧾 Detalle:\\n${detalleTexto}\\n\\n💰 *Total: $${Number(p.total_pago).toLocaleString('es-CO')}*\\n📍 Estado actual: *${p.estado}*`;\n\nreturn [{ json: { texto, encontrado: true } }];"
+      },
+      "id": "2e0f1455-674c-4cf3-a72f-389da9cdd89a",
+      "name": "Formatear detalle pedido",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        160
+      ],
+      "notesInFlow": false,
+      "notes": "Arma el detalle del pedido y los 3 botones de cambio de estado. El callback_data lleva el id_pedido y el estado nuevo juntos."
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Normalizar entrada').first().json.chat_id }}",
+        "text": "={{ $json.texto }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "👨‍🍳 Preparación",
+                    "additionalFields": {
+                      "callback_data": "={{ 'SETSTATUS:' + $('Buscar Pedido').first().json.id_pedido + ':Preparación' }}"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🛵 En camino",
+                    "additionalFields": {
+                      "callback_data": "={{ 'SETSTATUS:' + $('Buscar Pedido').first().json.id_pedido + ':En camino' }}"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "📦 Entregado",
+                    "additionalFields": {
+                      "callback_data": "={{ 'SETSTATUS:' + $('Buscar Pedido').first().json.id_pedido + ':Entregado' }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "e20d07d0-ea53-4d9b-b2c3-03a97f2d5aee",
+      "name": "Enviar detalle pedido",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -144,
+        160
+      ],
+      "webhookId": "a3ba8740-2cb4-4e0f-826b-bd65ab30a7d5",
+      "credentials": {
+        "telegramApi": {
+          "id": "VbBh8q0XYEMx7zBP",
+          "name": "DeliveryBot Telegram Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// param llega como 'ORD-20260808-113000:Preparación'\nconst raw = $('Normalizar entrada').first().json.param;\nconst idx = raw.lastIndexOf(':');\nconst id_pedido = raw.slice(0, idx);\nconst estado = raw.slice(idx + 1);\nreturn [{ json: { id_pedido, estado } }];"
+      },
+      "id": "8ad5b5e9-daa4-4709-8477-89502c89b495",
+      "name": "Preparar cambio de estado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        320
+      ],
+      "notesInFlow": false,
+      "notes": "Separa el callback_data 'SETSTATUS:<id_pedido>:<estado>' en sus dos partes."
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "18NWIaWc-EiEfVqBDF6Ju0Qy_Q5LCzHaR_beGbuoYpaU",
+          "cachedResultName": "DeliveryBot_DB"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "52459790",
+          "cachedResultName": "PEDIDOS"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id_pedido"
+          ],
+          "value": {
+            "id_pedido": "={{ $json.id_pedido }}",
+            "estado": "={{ $json.estado }}"
+          },
+          "schema": [
+            {
+              "id": "id_pedido",
+              "displayName": "id_pedido",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "type": "string",
+              "required": false,
+              "display": true,
+              "defaultMatch": false,
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aca27457-8ce2-42c4-a15c-5a1e79d1a808",
+      "name": "Actualizar estado pedido",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -352,
+        320
+      ],
+      "notesInFlow": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CNCpICN5ktJGioc7",
+          "name": "DeliveryBot Google Sheets"
+        }
+      },
+      "notes": "Escribe el nuevo estado en PEDIDOS. El workflow 'DeliveryBot - Estados' (que ya tienes) detecta este cambio por su cuenta y le avisa al cliente — no hace falta duplicar esa notificación aquí."
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Normalizar entrada').first().json.chat_id }}",
+        "text": "=✅ Pedido {{ $json.id_pedido }} actualizado a: {{ $json.estado }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "fd53a41d-da02-4e2e-bb0f-3c924e292bbd",
+      "name": "Confirmar cambio de estado",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -144,
+        320
+      ],
+      "webhookId": "d53a0ecf-74bb-4b30-ba0b-097d96b06fe4",
+      "credentials": {
+        "telegramApi": {
+          "id": "VbBh8q0XYEMx7zBP",
+          "name": "DeliveryBot Telegram Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "18NWIaWc-EiEfVqBDF6Ju0Qy_Q5LCzHaR_beGbuoYpaU",
+          "cachedResultName": "DeliveryBot_DB"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "52459790",
+          "cachedResultName": "PEDIDOS"
+        },
+        "options": {}
+      },
+      "id": "28970c74-efe0-45fc-8c01-ec5c4b604b70",
+      "name": "Leer PEDIDOS reporte",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -592,
+        496
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CNCpICN5ktJGioc7",
+          "name": "DeliveryBot Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json).filter(r => r && Object.keys(r).length > 0 && r.id_pedido);\nconst now = $now;\nconst p2 = n => String(n).padStart(2, '0');\nconst hoy = p2(now.day) + '/' + p2(now.month) + '/' + now.year;\nconst hoyRows = rows.filter(r => String(r.fecha) === hoy);\nlet total = 0;\nconst prodQty = {};\nconst horaCount = {};\nfor (const r of hoyRows) {\n  total += Number(r.total_pago || 0);\n  let cart = [];\n  try { cart = r.detalles_pedido ? JSON.parse(r.detalles_pedido) : []; } catch (e) { cart = []; }\n  for (const it of cart) {\n    const nombre = it.nombre || it.id_producto || 'desconocido';\n    prodQty[nombre] = (prodQty[nombre] || 0) + Number(it.cantidad || 0);\n  }\n  const h = String(r.hora || '').split(':')[0];\n  if (h !== '') horaCount[h] = (horaCount[h] || 0) + 1;\n}\nlet estrella = '—'; let maxQty = 0;\nfor (const k of Object.keys(prodQty)) { if (prodQty[k] > maxQty) { maxQty = prodQty[k]; estrella = k; } }\nlet horaPico = '—'; let maxH = 0;\nfor (const k of Object.keys(horaCount)) { if (horaCount[k] > maxH) { maxH = horaCount[k]; horaPico = k; } }\nif (horaPico !== '—') { horaPico = p2(horaPico) + ':00 - ' + p2((Number(horaPico) + 1) % 24) + ':00'; }\nconst texto = 'Reporte de hoy DeliveryBot\\n' +\n  'Fecha: ' + hoy + '\\n' +\n  'Total vendido: $' + total.toLocaleString('es-CO') + '\\n' +\n  'Pedidos: ' + hoyRows.length + '\\n' +\n  'Producto estrella: ' + estrella + '\\n' +\n  'Hora pico: ' + horaPico;\nreturn [{ json: { texto } }];"
+      },
+      "id": "12f39303-f245-4e9d-a29d-242d67ef18be",
+      "name": "Calcular reporte bajo demanda",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        496
+      ],
+      "notesInFlow": false,
+      "notes": "Misma lógica de cálculo que el workflow 'DeliveryBot - Reporte Diario', pero disparada a pedido (botón 'Reporte de hoy') en vez de por cron."
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Normalizar entrada').first().json.chat_id }}",
+        "text": "={{ $json.texto }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "58b7afe8-0a4a-49c6-bc3d-cdb2b4fa7178",
+      "name": "Enviar reporte bajo demanda",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -144,
+        496
+      ],
+      "webhookId": "0d06aeae-cd1e-4f12-b0cd-8899b8bedf1c",
+      "credentials": {
+        "telegramApi": {
+          "id": "VbBh8q0XYEMx7zBP",
+          "name": "DeliveryBot Telegram Admin"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Normalizar entrada').first().json.chat_id }}",
+        "text": "No entendí ese mensaje. Usa /start para ver las opciones del panel de administración.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "26f0d08b-5e9c-4d21-8a41-9fcc2e0eb30c",
+      "name": "Comando admin no reconocido",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -592,
+        704
+      ],
+      "webhookId": "ca063654-02ea-4baa-982b-b4815cd46f81",
+      "credentials": {
+        "telegramApi": {
+          "id": "VbBh8q0XYEMx7zBP",
+          "name": "DeliveryBot Telegram Admin"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger Admin": {
+      "main": [
+        [
+          {
+            "node": "Normalizar entrada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar entrada": {
+      "main": [
+        [
+          {
+            "node": "Buscar Admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Admin": {
+      "main": [
+        [
+          {
+            "node": "Es Admin?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es Admin?": {
+      "main": [
+        [
+          {
+            "node": "Ruteador Admin",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Acceso denegado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ruteador Admin": {
+      "main": [
+        [
+          {
+            "node": "Mensaje bienvenida admin",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Leer PEDIDOS pendientes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Pedido",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar cambio de estado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Leer PEDIDOS reporte",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Comando admin no reconocido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer PEDIDOS pendientes": {
+      "main": [
+        [
+          {
+            "node": "Formatear pendientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear pendientes": {
+      "main": [
+        [
+          {
+            "node": "Enviar pendientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Pedido": {
+      "main": [
+        [
+          {
+            "node": "Formatear detalle pedido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear detalle pedido": {
+      "main": [
+        [
+          {
+            "node": "Enviar detalle pedido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar cambio de estado": {
+      "main": [
+        [
+          {
+            "node": "Actualizar estado pedido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar estado pedido": {
+      "main": [
+        [
+          {
+            "node": "Confirmar cambio de estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer PEDIDOS reporte": {
+      "main": [
+        [
+          {
+            "node": "Calcular reporte bajo demanda",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular reporte bajo demanda": {
+      "main": [
+        [
+          {
+            "node": "Enviar reporte bajo demanda",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ee4c5688-96d9-4486-ae71-417d284fcb21",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "943f462e532f5c1600875f83ec8529dc2aa0a1341da90e4d37a73565b0fb430e"
+  },
+  "nodeGroups": [],
+  "id": "8DO1fKWYfFzQiXoL",
+  "tags": []
+}
