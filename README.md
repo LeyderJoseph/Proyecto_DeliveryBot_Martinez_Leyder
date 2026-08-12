@@ -64,7 +64,8 @@ flowchart TD
 
 ---
 
-## 🗂️ Estructura de datos — `DeliveryBot_DB`
+
+## 🗂️ Estructura de datos — [`DeliveryBot_DB`](https://docs.google.com/spreadsheets/d/18NWIaWc-EiEfVqBDF6Ju0Qy_Q5LCzHaR_beGbuoYpaU/edit?usp=sharing)
 
 | Hoja | Columnas | Propósito |
 |---|---|---|
@@ -160,4 +161,4 @@ Así se ve la hoja `MENU` en producción:
 
 ## 👤 Autor
 
-Proyecto desarrollado por **CODDY**.
+Proyecto desarrollado por Leyder Martínez
