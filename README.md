@@ -159,6 +159,108 @@ Así se ve la hoja `MENU` en producción:
 
 ---
 
+---
+
+## 🏆 Update: Examen — Sistema de Puntos de Lealtad
+
+Se ha incorporado un sistema de acumulación y consulta de puntos de lealtad para recompensar la preferencia de los clientes[cite: 1].
+
+### 🧠 Lógica de cálculo e implementación
+
+1. **Cálculo de Puntos (Nodo Edit Fields / Set):**
+   - En el flujo de confirmación del pedido (`DeliveryBot - Pedidos`), tras validar la existencia de stock, se calcula la bonificación equivalente a **1 punto por cada $5,000 gastados**[cite: 1].
+   - **Expresión utilizada:**
+     ```javascript
+     Math.floor(Number($json.total_pago || 0) / 5000)
+     ```
+
+2. **Persistencia de Datos:**
+   - Se consulta la hoja **`USUARIOS`** en Google Sheets filtrando por el `telegram_id` del comprador[cite: 1].
+   - Mediante un nodo *Code*, se toma el acumulado actual (`puntos_lealtad`) y se le suman los nuevos puntos generados[cite: 1].
+   - Se actualiza o inserta (upsert) la fila correspondiente utilizando el nodo de Google Sheets[cite: 1].
+
+3. **Interfaz del Bot (Menú Principal):**
+   - Se agregó el botón **`🏆 Ver mis Puntos`** en la botonera principal (`inline_keyboard`) del mensaje de bienvenida (`/start`) y en los atajos de teclado[cite: 1].
+
+4. **Respuesta al Cliente:**
+   - Al seleccionar la opción de puntos o escribir palabras clave relacionadas, el bot responde con la estructura[cite: 1]:
+     > *Hola [Nombre], actualmente tienes 🏆 [Puntos] puntos acumulados. ¡Sigue comprando para canjear premios!*[cite: 1]
+
+---
+
+### 📸 Capturas de pantalla (Evidencias)
+
+| Evidencia | Captura |
+|---|---|
+| **Nodos nuevos en el canvas de n8n** | ![Flujo n8n Puntos de Lealtad](img/n8n_puntos_workflow.png) |
+| **Prueba exitosa en Telegram** | ![Respuesta Telegram Puntos](img/telegram_puntos_resultado.png) |
+| **Evidencia en Google Sheets** | ![Google Sheets Puntos Lealtad](img/sheets_puntos_usuarios.png) |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## 👤 Autor
 
 Proyecto desarrollado por Leyder Martínez
