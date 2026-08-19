@@ -193,7 +193,7 @@ Se ha incorporado un sistema de acumulación y consulta de puntos de lealtad par
 | Evidencia | Captura |
 |---|---|
 | **Nodos nuevos en el canvas de n8n** | ![Flujo n8n Puntos de Lealtad](screenshots/n8n_puntos_workflow.png) |
-| **Prueba exitosa en Telegram** | ![Respuesta Telegram Puntos](screenshots/sheets_puntos_usuarios.png) |
+| **Prueba exitosa en Telegram** | ![Respuesta Telegram Puntos](screenshots/sheets_puntos_usuarios.png |
 | **Evidencia en Google Sheets** | ![Google Sheets Puntos Lealtad](screenshots/sheets_puntos_usuarios.png) |
 
 
